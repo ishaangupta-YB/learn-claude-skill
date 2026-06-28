@@ -1,0 +1,54 @@
+{
+  "name": "learn-claude-skill",
+  "version": "0.1.0",
+  "description": "An OpenCode-native skill suite that turns math problems into self-contained interactive lesson web pages, powered exclusively by Cloudflare Workers AI models (Kimi K2.7-code / K2.6, Qwen-Coder). Exact-math TypeScript core, deterministic answers, LLM only for parsing and narration.",
+  "keywords": [
+    "opencode",
+    "agent-skills",
+    "cloudflare-workers-ai",
+    "kimi",
+    "education",
+    "geometry",
+    "interactive-lessons",
+    "exact-arithmetic",
+    "typescript"
+  ],
+  "license": "MIT",
+  "author": "Ishaan Gupta",
+  "type": "module",
+  "bin": {
+    "learn-skill": "dist/cli.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "templates",
+    "skills",
+    "opencode.json"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "cli": "tsx src/cli.ts",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "coverage": "vitest run --coverage",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint --no-error-on-unmatched-pattern \"src/**/*.ts\" \"test/**/*.ts\"",
+    "lint:fix": "eslint --no-error-on-unmatched-pattern \"src/**/*.ts\" \"test/**/*.ts\" --fix"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@types/node": "20.16.5",
+    "@typescript-eslint/eslint-plugin": "7.18.0",
+    "@typescript-eslint/parser": "7.18.0",
+    "@vitest/coverage-v8": "4.1.9",
+    "eslint": "8.57.1",
+    "tsx": "4.19.3",
+    "typescript": "5.6.3",
+    "vitest": "4.1.9"
+  }
+}
