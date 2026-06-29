@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Interactive Analytic-Geometry Lesson</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous" />
+<style>
+  :root { --bg:#0f1226; --panel:#181c3a; --ink:#eef1ff; --muted:#9aa3d4; --accent:#6ee7ff; --hi:#ffd166; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Arial; background:var(--bg); color:var(--ink); }
+  header { padding:18px 24px; border-bottom:1px solid #2a2f5a; }
+  header h1 { margin:0; font-size:20px; }
+  header p { margin:6px 0 0; color:var(--muted); }
+  .wrap { display:grid; grid-template-columns: 1fr 380px; gap:0; height:calc(100vh - 78px); }
+  #board-host { display:flex; align-items:center; justify-content:center; }
+  .side { background:var(--panel); border-left:1px solid #2a2f5a; overflow-y:auto; padding:18px 20px; }
+  .answer { background:#11254a; border:1px solid #2a4d8f; border-radius:12px; padding:14px 16px; margin-bottom:16px; }
+  .answer .label { color:var(--accent); font-size:13px; text-transform:uppercase; letter-spacing:.06em; }
+  .step { border:1px solid #2a2f5a; border-radius:12px; padding:12px 14px; margin-bottom:10px; }
+  .step h3 { margin:0 0 6px; font-size:14px; color:var(--accent); }
+  .step .body { font-size:14px; line-height:1.5; }
+  .rangebar { margin-top:8px; }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title"></h1>
+  <p id="problem"></p>
+</header>
+<div class="wrap">
+  <div id="board-host"><canvas id="board" width="640" height="640"></canvas></div>
+  <div class="side">
+    <div class="answer">
+      <div class="label" id="answer-label"></div>
+      <div id="answer-latex" style="font-size:20px;margin-top:6px;"></div>
+      <canvas id="rangebar" class="rangebar" width="320" height="56"></canvas>
+    </div>
+    <div id="steps"></div>
+  </div>
+</div>
+
+<script id="lesson-data" type="application/json">__LESSON_DATA__</script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFG" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous"></script>
+<script>
+const lesson = JSON.parse(document.getElementById("lesson-data").textContent);
+const m = lesson.model;
+document.getElementById("title").textContent = lesson.title;
+document.getElementById("problem").innerHTML = lesson.problemHtml;
+document.getElementById("answer-label").innerHTML = lesson.answerLabel;
+document.getElementById("answer-latex").textContent = "$$" + lesson.answerLatex + "$$";
+
+// --- board ---
+const cv = document.getElementById("board"), ctx = cv.getContext("2d");
+const [xmin,xmax,ymin,ymax] = m.view;
+const W = cv.width, H = cv.height, pad = 24;
+const sx = (W-2*pad)/(xmax-xmin), sy = (H-2*pad)/(ymax-ymin);
+const px = x => pad + (x-xmin)*sx;
+const py = y => H - pad - (y-ymin)*sy;
+
+ctx.fillStyle = "#0f1226"; ctx.fillRect(0,0,W,H);
+// axes
+ctx.strokeStyle = "#2a2f5a"; ctx.lineWidth = 1;
+ctx.beginPath(); ctx.moveTo(px(xmin),py(0)); ctx.lineTo(px(xmax),py(0));
+ctx.moveTo(px(0),py(ymin)); ctx.lineTo(px(0),py(ymax)); ctx.stroke();
+
+ctx.strokeStyle = "#6ee7ff"; ctx.lineWidth = 2; ctx.beginPath();
+const c = m.conic;
+if (c.kind === "ellipse") {
+  const {a,b} = c.params;
+  for (let t=0;t<=Math.PI*2+0.01;t+=0.01){ const x=a*Math.cos(t), y=b*Math.sin(t); t===0?ctx.moveTo(px(x),py(y)):ctx.lineTo(px(x),py(y)); }
+} else if (c.kind === "parabola") {
+  const p = c.params.p;
+  for (let y=ymin;y<=ymax;y+=0.02){ const x=(y*y)/(2*p); y===ymin?ctx.moveTo(px(x),py(y)):ctx.lineTo(px(x),py(y)); }
+}
+ctx.stroke();
+
+// points
+for (const [name,[x,y]] of Object.entries(m.points || {})) {
+  ctx.fillStyle = "#ffd166"; ctx.beginPath(); ctx.arc(px(x),py(y),4,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = "#eef1ff"; ctx.font = "14px sans-serif"; ctx.fillText(name, px(x)+6, py(y)-6);
+}
+
+// --- range bar ---
+const rb = m.rangeBar;
+if (rb) {
+  const rc = document.getElementById("rangebar"), rctx = rc.getContext("2d");
+  const w = rc.width, h = rc.height, p2 = 18;
+  rctx.clearRect(0,0,w,h);
+  rctx.strokeStyle = "#9aa3d4"; rctx.beginPath(); rctx.moveTo(p2,h/2); rctx.lineTo(w-p2,h/2); rctx.stroke();
+  rctx.strokeStyle = "#6ee7ff"; rctx.lineWidth = 4; rctx.beginPath(); rctx.moveTo(p2,h/2); rctx.lineTo(w-p2,h/2); rctx.stroke();
+  function endpoint(cx, closed, label){
+    rctx.fillStyle = closed ? "#6ee7ff" : "#0f1226";
+    rctx.strokeStyle = "#6ee7ff"; rctx.lineWidth = 3;
+    rctx.beginPath(); rctx.arc(cx,h/2,7,0,Math.PI*2); rctx.fill(); rctx.stroke();
+    rctx.fillStyle = "#eef1ff"; rctx.font = "13px sans-serif"; rctx.textAlign="center";
+    rctx.fillText(label, cx, h/2-12);
+  }
+  endpoint(p2, rb.loClosed, String(rb.lo));
+  endpoint(w-p2, rb.hiClosed, String(rb.hi));
+} else {
+  document.getElementById("rangebar").style.display = "none";
+}
+
+// --- steps ---
+const stepsEl = document.getElementById("steps");
+lesson.steps.forEach((st,i)=>{
+  const d = document.createElement("div"); d.className="step";
+  d.innerHTML = `<h3>Step ${i+1}: ${st.title}</h3><div class="body">${st.html}</div>`;
+  stepsEl.appendChild(d);
+});
+
+renderMathInElement(document.body, { delimiters:[
+  {left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}
+]});
+</script>
+</body>
+</html>

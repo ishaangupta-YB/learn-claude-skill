@@ -43,8 +43,8 @@
   },
   "devDependencies": {
     "@types/node": "20.16.5",
-    "@typescript-eslint/eslint-plugin": "7.18.0",
-    "@typescript-eslint/parser": "7.18.0",
+    "@typescript-eslint/eslint-plugin": "8.8.1",
+    "@typescript-eslint/parser": "8.8.1",
     "@vitest/coverage-v8": "4.1.9",
     "eslint": "8.57.1",
     "tsx": "4.19.3",
